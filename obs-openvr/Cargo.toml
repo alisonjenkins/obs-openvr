@@ -1,6 +1,6 @@
 [package]
 name = "obs-openvr"
-version = "0.1.0"
+version = "0.2.0"
 authors = ["Matt Coffin <mcoffin13@gmail.com>"]
 edition = "2018"
 
@@ -35,8 +35,7 @@ version = "^1.0.67"
 features = ["parallel"]
 
 [features]
-# default = ["mirror-source", "overlay-source"]
-default = ["overlay-source"]
+default = ["mirror-source", "overlay-source"]
 mirror-source = []
 overlay-source = []
 no-lock = ["openvr/no-lock"]

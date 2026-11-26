@@ -90,3 +90,17 @@ pub fn shutdown() -> bool {
         false
     }
 }
+
+/// Whether OpenVR is currently initialized by us
+pub fn is_initialized() -> bool {
+    INITIALIZED.load(Ordering::SeqCst)
+}
+
+/// Drains pending OpenVR events, returning true if SteamVR asked us to quit (or is gone). Only
+/// call this while OpenVR is initialized.
+pub fn poll_quit() -> bool {
+    if !is_initialized() {
+        return true;
+    }
+    unsafe { util::obs_openvr_poll_quit() }
+}

@@ -83,6 +83,18 @@ impl Properties {
         }
     }
 
+    pub fn add_int_slider(&mut self, name: &'static CStr, description: &'static CStr, min: libc::c_int, max: libc::c_int, step: libc::c_int) -> &mut sys::obs_property {
+        unsafe {
+            sys::obs_properties_add_int_slider(self.as_ptr_mut(), name.as_ptr(), description.as_ptr(), min, max, step).as_mut().unwrap()
+        }
+    }
+
+    pub fn add_float_slider(&mut self, name: &'static CStr, description: &'static CStr, min: f64, max: f64, step: f64) -> &mut sys::obs_property {
+        unsafe {
+            sys::obs_properties_add_float_slider(self.as_ptr_mut(), name.as_ptr(), description.as_ptr(), min, max, step).as_mut().unwrap()
+        }
+    }
+
     pub fn add_text(&mut self, name: &'static CStr, description: &'static CStr, ty: sys::obs_text_type) -> &mut sys::obs_property {
         unsafe {
             sys::obs_properties_add_text(self.as_ptr_mut(), name.as_ptr(), description.as_ptr(), ty).as_mut().unwrap()
