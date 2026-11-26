@@ -1,0 +1,33 @@
+name: Build
+
+on:
+  push:
+    branches: [master]
+    tags: ["v*"]
+  pull_request:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: cachix/install-nix-action@v31
+      - name: Build plugin
+        run: nix build -L .#obs-openvr
+      - name: Package plugin
+        run: |
+          mkdir -p dist/obs-openvr/bin/64bit
+          install -m644 result/lib/obs-plugins/obs-openvr.so dist/obs-openvr/bin/64bit/obs-openvr.so
+          tar -C dist -czf obs-openvr-linux-x86_64.tar.gz obs-openvr
+      - uses: actions/upload-artifact@v4
+        with:
+          name: obs-openvr-linux-x86_64
+          path: obs-openvr-linux-x86_64.tar.gz
+      - name: Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: obs-openvr-linux-x86_64.tar.gz

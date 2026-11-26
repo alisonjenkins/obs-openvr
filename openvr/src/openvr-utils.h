@@ -40,6 +40,7 @@ extern "C" {
 	bool obs_openvr_vrcompositor_releasesharedgltexture(vr::glUInt_t id, vr::glSharedTextureHandle_t handle);
 	void obs_openvr_vrcompositor_locksharedgltexture(vr::glSharedTextureHandle_t handle);
 	void obs_openvr_vrcompositor_unlocksharedgltexture(vr::glSharedTextureHandle_t handle);
+	bool obs_openvr_poll_quit();
 
 	vr::IVRHeadsetView *openvr_utils_get_headset_view();
 	openvr_utils::headset_view_size openvr_utils_headset_view_get_size(vr::IVRHeadsetView *headset_view);

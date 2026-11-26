@@ -20,6 +20,7 @@ pub trait ObsData {
     fn get_cstr<'a, K: AsRef<CStr>>(&'a self, key: K) -> Option<&'a CStr>;
     fn get_int<K: AsRef<CStr>>(&self, k: K) -> libc::c_longlong;
     fn get_bool<K: AsRef<CStr>>(&self, k: K) -> bool;
+    fn get_double<K: AsRef<CStr>>(&self, k: K) -> f64;
     fn get_string<'a, K: AsRef<CStr>>(&'a self, key: K) -> Option<&'a str> {
         self.get_cstr(key).and_then(|s| s.to_str().ok())
     }
@@ -49,7 +50,7 @@ impl ObsData for sys::obs_data {
             sys::obs_data_get_string(self_ptr, s.as_ptr())
         };
         Some(ptr)
-            .filter(|p| p.is_null())
+            .filter(|p| !p.is_null())
             .map(|p| unsafe { CStr::from_ptr(p) })
     }
     fn get_int<K: AsRef<CStr>>(&self, k: K) -> libc::c_longlong
@@ -67,6 +68,13 @@ impl ObsData for sys::obs_data {
         unsafe {
             let self_ptr: *mut sys::obs_data = mem::transmute(self as *const _);
             sys::obs_data_get_bool(self_ptr, k.as_ptr())
+        }
+    }
+    fn get_double<K: AsRef<CStr>>(&self, k: K) -> f64 {
+        let k = k.as_ref();
+        unsafe {
+            let self_ptr: *mut sys::obs_data = mem::transmute(self as *const _);
+            sys::obs_data_get_double(self_ptr, k.as_ptr())
         }
     }
 }

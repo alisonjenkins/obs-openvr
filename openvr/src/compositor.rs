@@ -47,6 +47,12 @@ impl MirrorTextureInfo {
     pub unsafe fn lock<'a>(&'a self) -> MirrorTextureLock<'a> {
         MirrorTextureLock::new(self.handle)
     }
+
+    /// Like `lock`, but doesn't borrow `self`. The caller must drop the lock before this
+    /// texture is released.
+    pub unsafe fn lock_detached(&self) -> MirrorTextureLock<'static> {
+        MirrorTextureLock::new(self.handle)
+    }
 }
 
 impl Drop for MirrorTextureInfo {

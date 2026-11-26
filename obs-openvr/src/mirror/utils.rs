@@ -21,10 +21,9 @@ impl TextureFormat {
 
 impl Into<Option<obs::sys::gs_color_format>> for TextureFormat {
     fn into(self) -> Option<obs::sys::gs_color_format> {
-        use obs::sys::gs_color_format::*;
         match self {
             TextureFormat::Rgb => None,
-            TextureFormat::Rgba => Some(GS_RGBA),
+            TextureFormat::Rgba => Some(obs::sys::gs_color_format_GS_RGBA),
         }
     }
 }
@@ -75,10 +74,16 @@ fn gl_error_to_result(status: u32) -> Result<(), u32> {
 }
 
 pub unsafe fn copy_gl_texture(texture: u32, format: u32, img: *mut u8) -> Result<(), u32> {
-    gl_error_to_result(obs_openvr_copy_gl_texture(texture, format, img))
+    gl_error_to_result(obs_openvr_copy_gl_texture(texture, format, img) as u32)
+}
+
+/// Blits a region of `src` into the whole of `dst` on the GPU. Returns 0 on success.
+pub unsafe fn blit_gl_texture(src: u32, sx: i32, sy: i32, sw: i32, sh: i32, dst: u32, dw: i32, dh: i32) -> i32 {
+    obs_openvr_blit_gl_texture(src, sx, sy, sw, sh, dst, dw, dh)
 }
 
 extern "C" {
     fn obs_openvr_get_gl_texture_size(texture: u32, out: *mut GlTextureSize);
-    fn obs_openvr_copy_gl_texture(texture: u32, format: u32, img: *mut u8) -> u32;
+    fn obs_openvr_copy_gl_texture(texture: u32, format: u32, img: *mut u8) -> i32;
+    fn obs_openvr_blit_gl_texture(src: u32, sx: i32, sy: i32, sw: i32, sh: i32, dst: u32, dw: i32, dh: i32) -> i32;
 }

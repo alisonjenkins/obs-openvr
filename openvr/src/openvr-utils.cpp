@@ -38,20 +38,50 @@ void obs_openvr_shutdown_openvr()
 
 vr::EVRCompositorError obs_openvr_vrcompositor_getmirrortexturegl(vr::EVREye eye, vr::glUInt_t *tex_id, vr::glSharedTextureHandle_t *tex_handle)
 {
-	return vr::VRCompositor()->GetMirrorTextureGL(eye, tex_id, tex_handle);
+	vr::IVRCompositor *compositor = vr::VRCompositor();
+	if (!compositor) {
+		return vr::VRCompositorError_RequestFailed;
+	}
+	return compositor->GetMirrorTextureGL(eye, tex_id, tex_handle);
 }
 
+// The helpers below may run after SteamVR has gone away, so they must not
+// assume the compositor interface is still there.
 bool obs_openvr_vrcompositor_releasesharedgltexture(vr::glUInt_t id, vr::glSharedTextureHandle_t handle)
 {
-	return vr::VRCompositor()->ReleaseSharedGLTexture(id, handle);
+	vr::IVRCompositor *compositor = vr::VRCompositor();
+	return compositor ? compositor->ReleaseSharedGLTexture(id, handle) : false;
 }
 void obs_openvr_vrcompositor_locksharedgltexture(vr::glSharedTextureHandle_t handle)
 {
-	vr::VRCompositor()->LockGLSharedTextureForAccess(handle);
+	vr::IVRCompositor *compositor = vr::VRCompositor();
+	if (compositor) {
+		compositor->LockGLSharedTextureForAccess(handle);
+	}
 }
 void obs_openvr_vrcompositor_unlocksharedgltexture(vr::glSharedTextureHandle_t handle)
 {
-	vr::VRCompositor()->UnlockGLSharedTextureForAccess(handle);
+	vr::IVRCompositor *compositor = vr::VRCompositor();
+	if (compositor) {
+		compositor->UnlockGLSharedTextureForAccess(handle);
+	}
+}
+
+bool obs_openvr_poll_quit()
+{
+	vr::IVRSystem *system = vr::VRSystem();
+	if (!system) {
+		return true;
+	}
+	vr::VREvent_t event;
+	while (system->PollNextEvent(&event, sizeof(event))) {
+		if (event.eventType == vr::VREvent_Quit) {
+			// Tell SteamVR we are letting go so it doesn't wait on us.
+			system->AcknowledgeQuit_Exiting();
+			return true;
+		}
+	}
+	return false;
 }
 
 openvr_utils::headset_view_size openvr_utils_headset_view_get_size(vr::IVRHeadsetView *headset_view)

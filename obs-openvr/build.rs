@@ -57,8 +57,6 @@ impl FromStr for TargetFamily {
     }
 }
 
-const LIBRARY_NAME: &'static str = "libobs-openvr-utils.a";
-
 fn add_link_library(name: &str, kind: Option<&str>) {
     if let Some(kind) = kind {
         println!("cargo:rustc-link-lib={}={}", kind, name);
@@ -80,68 +78,26 @@ fn add_link_library(name: &str, kind: Option<&str>) {
 //     });
 // }
 
-fn glad_sources<P: AsRef<Path>>(tf: TargetFamily, source_dir: P) -> (Vec<PathBuf>, Vec<PathBuf>) {
-    let source_dir = source_dir.as_ref();
-    let mut sources = vec!["src/glad.c"];
-    let mut headers = vec!["include/glad/glad.h"];
-    match tf {
-        TargetFamily::Unix => {
-            sources.push("src/glad_egl.c");
-            headers.extend(["include/EGL/eglplatform.h", "include/glad/glad_egl.h"]);
-        },
-        _ => {
-            unimplemented!()
-        },
-    }
-    let prepend_path = |relative: Vec<&'static str>| -> Vec<PathBuf> {
-        relative.into_iter()
-            .map(|f| source_dir.join(f))
-            .collect()
-    };
-    (prepend_path(sources), prepend_path(headers))
-}
-
 fn main() {
     let profile = BuildProfile::current_or_default();
     let target_family = TargetFamily::from_env()
         .expect("failed to get target family");
     if has_feature("mirror-source") {
-        let mut vr_utils_build = cc::Build::new();
-        if profile.is_debug() {
-            vr_utils_build
-                .define("DEBUG", Some("1"));
+        if target_family != TargetFamily::Unix {
+            panic!("the mirror source is only supported on Linux");
         }
-        vr_utils_build
-            .flag("-std=c11")
-            .flag("-Wno-unused-parameter")
-            .include("src")
-            .file("src/utils.c")
-            .compile(LIBRARY_NAME);
-
-        let mut mirror_utils_build = cc::Build::new();
+        let mut gl_copy_build = cc::Build::new();
         if profile.is_debug() {
-            mirror_utils_build.define("DEBUG", Some("1"));
+            gl_copy_build.define("DEBUG", Some("1"));
         }
-        mirror_utils_build
+        gl_copy_build
             .flag("-std=c11")
-            .flag("-Wno-unused-parameter")
             .flag("-fPIC")
-            .flag("-lEGL")
             .include("src")
-            .file("src/mirror-utils.c");
-        let glad_source_dir = env::var("OBS_SOURCE_DIR")
-            .map(PathBuf::from)
-            .map(|mut p| {
-                p.extend(["deps", "glad"]);
-                p
-            })
-            .expect("couldn't find OBS_SOURCE_DIR");
-        let (g_sources, g_headers) = glad_sources(target_family, &glad_source_dir);
-        mirror_utils_build
-            .include(glad_source_dir.join("include"))
-            .files(g_sources.into_iter().chain(g_headers.into_iter()))
-            .compile("libobs-openvr-mirror-utils.a");
-
-        // add_link_library("obsglad", Some("dylib"));
+            .file("src/gl-copy.c")
+            .compile("libobs-openvr-gl-copy.a");
+        println!("cargo:rerun-if-changed=src/gl-copy.c");
+        println!("cargo:rerun-if-changed=src/gl-copy.h");
+        add_link_library("dl", None);
     }
 }

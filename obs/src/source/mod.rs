@@ -74,6 +74,10 @@ pub trait VideoSource: Sized {
     fn video_tick(&self, _seconds: f32) {
         print_vs_stub("video_tick");
     }
+    /// Optional `get_defaults` callback for the source's settings
+    fn get_defaults() -> Option<unsafe extern "C" fn(*mut sys::obs_data_t)> {
+        None
+    }
 
     fn raw_source_info() -> RawSourceInfo<'static> {
         let id: &'static CStr = CStr::from_bytes_with_nul(Self::ID).unwrap();
@@ -87,6 +91,7 @@ pub trait VideoSource: Sized {
         info.0.video_tick = Some(video_source_video_tick::<Self>);
         info.0.create = Some(video_source_create::<Self>);
         info.0.destroy = Some(video_source_destroy::<Self>);
+        info.0.get_defaults = Self::get_defaults();
         info
     }
 }
